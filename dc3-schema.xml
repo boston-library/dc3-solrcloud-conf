@@ -169,6 +169,12 @@
 
     <dynamicField name="attr_*" type="text_general" indexed="true" stored="true" multiValued="true"/>
 
+    <!-- text (_t...) -->
+    <dynamicField name="*_tsi" type="text" stored="true" indexed="true" multiValued="false"/>
+
+    <!-- boolean (_b...) -->
+    <dynamicField name="*_bsi" type="boolean" stored="true" indexed="true" multiValued="false"/>
+    
 
     <!-- spellcheck field -->
     <dynamicField name="*spell" type="textSpell" indexed="true" stored="false" multiValued="true" />
@@ -296,6 +302,14 @@
       <analyzer class="org.apache.lucene.analysis.el.GreekAnalyzer"/>
     </fieldType>
     -->
+
+    <fieldType name="text" class="solr.TextField" positionIncrementGap="100">
+      <analyzer>
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <filter class="solr.ICUFoldingFilterFactory"/> <!-- NFKC, case folding, diacritics removed -->
+        <filter class="solr.SnowballPorterFilterFactory" language="English"/>
+      </analyzer>
+    </fieldType>
 
     <!-- A text field that only splits on whitespace for exact matching of words -->
     <dynamicField name="*_ws" type="text_ws"  indexed="true"  stored="true"/>

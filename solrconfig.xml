@@ -35,7 +35,7 @@
        that you fully re-index after changing this setting as it can
        affect both how text is indexed and queried.
   -->
-  <luceneMatchVersion>9.3</luceneMatchVersion>
+  <luceneMatchVersion>9.1</luceneMatchVersion>
 
   <!-- <lib/> directives can be used to instruct Solr to load any Jars
        identified and use them to resolve any "plugins" specified in
@@ -73,9 +73,9 @@
        with their external dependencies.
     -->
     <!-- <lib dir="${solr.install.dir:../../../..}/modules/ltr/lib" regex=".*\.jar" /> -->
-	    <!-- with this lib included, search results are less without inclduing it. 
-    <lib dir="/opt/solr/modules/analysis-extras/lib" />
-   --> 
+	    <!-- with this lib included, search results are less without inclduing it.
+	    <lib dir="/opt/solr/modules/analysis-extras/lib" />  -->
+  <lib dir="${solr.install.dir:../../../..}/modules/analysis-extras/lib" />  
 
   <!-- an exact 'path' can be used instead of a 'dir' to specify a
        specific jar file.  This will cause a serious error to be logged
