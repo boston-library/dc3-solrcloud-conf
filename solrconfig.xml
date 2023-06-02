@@ -72,11 +72,10 @@
        The example below can be used to load a Solr Module along
        with their external dependencies.
     -->
-  <!-- extra solr lib dirs -->
-  <lib dir="${solr.install.dir:../../../..}/contrib/analysis-extras/lib" />
-  <lib dir="${solr.install.dir:../../../..}/contrib/analysis-extras/lucene-libs" />		  
-
-  <!-- <lib dir="${solr.install.dir:../../../..}/modules/ltr/lib" regex=".*\.jar" /> -->
+    <!-- <lib dir="${solr.install.dir:../../../..}/modules/ltr/lib" regex=".*\.jar" /> -->
+	    <!-- with this lib included, search results are less without inclduing it. 
+    <lib dir="/opt/solr/modules/analysis-extras/lib" />
+   --> 
 
   <!-- an exact 'path' can be used instead of a 'dir' to specify a
        specific jar file.  This will cause a serious error to be logged
@@ -251,6 +250,17 @@
     <!-- <infoStream file="INFOSTREAM.txt">false</infoStream> -->
   </indexConfig>
 
+  <requestHandler name="/analysis/field" startup="lazy" class="solr.FieldAnalysisRequestHandler" />
+  <requestHandler name="/update" class="solr.UpdateRequestHandler" />
+
+  <requestHandler name="/admin/ping" class="solr.PingRequestHandler">
+    <lst name="invariants">
+      <str name="q">solrpingquery</str>
+    </lst>
+    <lst name="defaults">
+      <str name="echoParams">all</str>
+    </lst>
+  </requestHandler>
   <!-- config for the admin interface -->
   <admin>
     <defaultQuery>search</defaultQuery>
@@ -300,6 +310,7 @@
       -->
     <autoCommit>
       <maxTime>${solr.autoCommit.maxTime:15000}</maxTime>
+      <maxDocs>2000</maxDocs>       
       <openSearcher>false</openSearcher>
     </autoCommit>
 
@@ -626,6 +637,14 @@
 
   </circuitBreakers>
 
+  <!-- <requestHandler name="/replication" class="solr.ReplicationHandler" startup="lazy" /> -->
+  <requestHandler name="/replication" class="solr.ReplicationHandler">
+    <lst>
+        <str name="replicateAfter">commit</str>
+        <str name="replicateAfter">startup</str>
+        <str name="confFiles">schema.xml,stopwords.txt</str>
+    </lst>
+  </requestHandler>
 
   <!-- Request Dispatcher
 
@@ -755,6 +774,13 @@
       <str name="indent">true</str>
     </lst>
   </requestHandler>
+
+  <!-- Shared parameters for multiple Request Handlers -->
+  <initParams path="/update/**,/query,/select,/spell">
+    <lst name="defaults">
+      <str name="df">_text_</str>
+    </lst>
+  </initParams>
 
   <requestHandler name="search" class="solr.SearchHandler" default="true">
     <!-- default values for query parameters can be specified, these
@@ -1044,7 +1070,7 @@ http://wiki.apache.org/solr/LocalParams
       <str>spellcheck</str>
     </arr>
   </requestHandler>
-	  
+
   <requestHandler name="permissions" class="solr.SearchHandler" >
     <lst name="defaults">
       <str name="facet">off</str>
@@ -1067,20 +1093,13 @@ http://wiki.apache.org/solr/LocalParams
       </str>
     </lst>
   </requestHandler>
-
+  
   <requestHandler name="standard" class="solr.SearchHandler">
      <lst name="defaults">
        <str name="echoParams">explicit</str>
        <str name="defType">lucene</str>
      </lst>
   </requestHandler>
-
-  <!-- Shared parameters for multiple Request Handlers -->
-  <initParams path="/update/**,/query,/select,/spell">
-    <lst name="defaults">
-      <str name="df">_text_</str>
-    </lst>
-  </initParams>
 
   <!-- for requests to get a single document; use id=666 instead of q=id:666 -->
   <requestHandler name="document" class="solr.SearchHandler" >
@@ -1096,7 +1115,7 @@ http://wiki.apache.org/solr/LocalParams
       <str name="q">{!term f=id v=$id}</str> <!-- use id=666 instead of q=id:666 -->
     </lst>
   </requestHandler>
-
+  
   <!-- totally experimental, for "more like this" link in catalog#show -->
   <requestHandler name="mlt_qparser" class="solr.SearchHandler">
     <lst name="defaults">
@@ -1115,15 +1134,88 @@ http://wiki.apache.org/solr/LocalParams
     </lst>
   </requestHandler>
 
-  <searchComponent name="spellcheck" class="solr.SpellCheckComponent">
-    <str name="queryAnalyzerFieldType">textSpell</str>
-    <lst name="spellchecker">
-      <str name="name">default</str>
-      <str name="classname">solr.DirectSolrSpellChecker</str>
-      <str name="field">spell</str>
+  <!-- Spell Check
+
+       The spell check component can return a list of alternative spelling
+       suggestions.
+
+       https://solr.apache.org/guide/solr/latest/query-guide/spell-checking.html
+    -->
+  <!-- suggest searchComponent for autocomplete -->
+  <searchComponent name="suggest" class="solr.SuggestComponent">
+    <lst name="suggester">
+      <str name="name">mySuggester</str>
+      <str name="lookupImpl">FuzzyLookupFactory</str>
+      <bool name="exactMatchFirst">true</bool>
+      <str name="dictionaryImpl">HighFrequencyDictionaryFactory</str>
+      <!-- <float name="threshold">.00004</float> --> <!-- may need to tweak for production -->
+      <str name="field">suggest</str>
+      <str name="suggestAnalyzerFieldType">textSuggest</str>
+      <str name="buildOnStartup">false</str>
+      <str name="buildOnCommit">false</str>
+      <str name="buildOnOptimize">false</str>
     </lst>
   </searchComponent>
- 
+
+
+  <!-- suggest requestHandler for autocomplete -->
+  <requestHandler name="/suggest" class="solr.SearchHandler" startup="lazy">
+    <lst name="defaults">
+      <str name="suggest">true</str>
+      <str name="suggest.count">5</str>
+      <str name="suggest.dictionary">mySuggester</str>
+    </lst>
+    <arr name="components">
+      <str>suggest</str>
+    </arr>
+  </requestHandler>
+
+  <searchComponent name="spellcheck" class="solr.SpellCheckComponent">
+    <!--
+    <str name="queryAnalyzerFieldType">text_general</str>
+    -->
+    <str name="queryAnalyzerFieldType">textSpell</str>
+
+    <!-- Multiple "Spell Checkers" can be declared and used by this
+         component
+      -->
+
+    <!-- a spellchecker built from a field of the main index -->
+    <lst name="spellchecker">
+      <str name="name">default</str>
+      <str name="field">_text_</str>
+      <str name="classname">solr.DirectSolrSpellChecker</str>
+      <!-- the spellcheck distance measure used, the default is the internal levenshtein -->
+      <str name="distanceMeasure">internal</str>
+      <!-- minimum accuracy needed to be considered a valid spellcheck suggestion -->
+      <float name="accuracy">0.5</float>
+      <!-- the maximum #edits we consider when enumerating terms: can be 1 or 2 -->
+      <int name="maxEdits">2</int>
+      <!-- the minimum shared prefix when enumerating terms -->
+      <int name="minPrefix">1</int>
+      <!-- maximum number of inspections per result. -->
+      <int name="maxInspections">5</int>
+      <!-- minimum length of a query term to be considered for correction -->
+      <int name="minQueryLength">4</int>
+      <!-- maximum threshold of documents a query term can appear to be considered for correction -->
+      <float name="maxQueryFrequency">0.01</float>
+      <!-- uncomment this to require suggestions to occur in 1% of the documents
+        <float name="thresholdTokenFrequency">.01</float>
+      -->
+    </lst>
+
+    <!-- a spellchecker that can break or combine words.  See "/spell" handler below for usage -->
+    <!--
+    <lst name="spellchecker">
+      <str name="name">wordbreak</str>
+      <str name="classname">solr.WordBreakSolrSpellChecker</str>
+      <str name="field">name</str>
+      <str name="combineWords">true</str>
+      <str name="breakWords">true</str>
+      <int name="maxChanges">10</int>
+    </lst>
+    -->
+  </searchComponent>
 
   <!-- A request handler for demonstrating the spellcheck component.
 
@@ -1159,54 +1251,6 @@ http://wiki.apache.org/solr/LocalParams
       <str>spellcheck</str>
     </arr>
   </requestHandler>
-
-  <!-- suggest searchComponent for autocomplete -->
-  <searchComponent name="suggest" class="solr.SuggestComponent">
-    <lst name="suggester">
-      <str name="name">mySuggester</str>
-      <str name="lookupImpl">FuzzyLookupFactory</str>
-      <bool name="exactMatchFirst">true</bool>
-      <str name="dictionaryImpl">HighFrequencyDictionaryFactory</str>
-      <!-- <float name="threshold">.00004</float> --> <!-- may need to tweak for production -->
-      <str name="field">suggest</str>
-      <str name="suggestAnalyzerFieldType">textSuggest</str>
-      <str name="buildOnStartup">false</str>
-      <str name="buildOnCommit">false</str>
-      <str name="buildOnOptimize">false</str>
-    </lst>
-  </searchComponent>
-
-  <!-- suggest requestHandler for autocomplete -->
-  <requestHandler name="/suggest" class="solr.SearchHandler" startup="lazy">
-    <lst name="defaults">
-      <str name="suggest">true</str>
-      <str name="suggest.count">5</str>
-      <str name="suggest.dictionary">mySuggester</str>
-    </lst>
-    <arr name="components">
-      <str>suggest</str>
-    </arr>
-  </requestHandler>
-
-  <requestHandler name="/replication" class="solr.ReplicationHandler">
-    <lst>
-        <str name="replicateAfter">commit</str>
-        <str name="replicateAfter">startup</str>
-        <str name="confFiles">schema.xml,stopwords.txt</str>
-    </lst>
-  </requestHandler>
-
-  <requestHandler name="/analysis/field" startup="lazy" class="solr.FieldAnalysisRequestHandler" />
-  <requestHandler name="/update" class="solr.UpdateRequestHandler" />
-
-  <requestHandler name="/admin/ping" class="solr.PingRequestHandler">
-    <lst name="invariants">
-      <str name="q">solrpingquery</str>
-    </lst>
-    <lst name="defaults">
-      <str name="echoParams">all</str>
-    </lst>
-  </requestHandler> 
 
   <!-- Highlighting Component
 
@@ -1323,6 +1367,11 @@ http://wiki.apache.org/solr/LocalParams
        to preprocess documents sent to Update Request Handlers.
     -->
 
+  <schemaFactory class="ManagedIndexSchemaFactory">
+    <bool name="mutable">true</bool>
+    <str name="managedSchemaResourceName">dc3-schema.xml</str>
+  </schemaFactory>
+
   <!-- Add unknown fields to the schema
 
        Field type guessing update request processors that will
@@ -1389,28 +1438,52 @@ http://wiki.apache.org/solr/LocalParams
     </lst>
   </updateProcessor>
 
-  <updateProcessor class="solr.processor.SignatureUpdateProcessorFactory" name="add_hash_id">
-     <bool name="enabled">true</bool>
-     <str name="signatureField">hashed_id_si</str>
-     <bool name="overwriteDupes">false</bool>
-     <str name="fields">id</str>
-     <str name="signatureClass">solr.processor.Lookup3Signature</str>
-  </updateProcessor>
-
-  <!--
+  <!-- The update.autoCreateFields property can be turned to false to disable schemaless mode -->
   <updateRequestProcessorChain name="add-unknown-fields-to-the-schema" default="${update.autoCreateFields:true}"
            processor="uuid,remove-blank,field-name-mutating,parse-boolean,parse-long,parse-double,parse-date,add-schema-fields">
     <processor class="solr.LogUpdateProcessorFactory"/>
     <processor class="solr.DistributedUpdateProcessorFactory"/>
     <processor class="solr.RunUpdateProcessorFactory"/>
   </updateRequestProcessorChain>
-  -->
 
-  <updateRequestProcessorChain name="cloud" default="${update.autoCreateFields:true}"  processor="add_hash_id">   
-       <processor class="solr.LogUpdateProcessorFactory" />
-       <processor class="solr.DistributedUpdateProcessorFactory"/>
-       <processor class="solr.RunUpdateProcessorFactory" />
+
+  <!-- to support dynamic sitemaps -->
+  <updateProcessor class="solr.processor.SignatureUpdateProcessorFactory" name="add_hash_id">
+    <bool name="enabled">true</bool>
+    <str name="signatureField">hashed_id_si</str>
+    <bool name="overwriteDupes">false</bool>
+    <str name="fields">id</str>
+    <str name="signatureClass">solr.processor.Lookup3Signature</str>
+  </updateProcessor>
+
+  <updateRequestProcessorChain name="cloud" processor="add_hash_id" default="true">
+    <processor class="solr.LogUpdateProcessorFactory"/>
+    <processor class="solr.DistributedUpdateProcessorFactory"/>
+    <processor class="solr.RunUpdateProcessorFactory"/>
   </updateRequestProcessorChain>
+  
+
+  <!-- Deduplication
+
+       An example dedup update request processor chain that creates the "id" field
+       on the fly based on the hash code of some other fields.  This
+       example has overwriteDupes set to false since we are using the
+       id field as the signatureField and Solr will maintain
+       uniqueness based on that anyway.
+
+    -->
+  <!--
+     <updateRequestProcessorChain name="dedupe">
+       <processor class="solr.processor.SignatureUpdateProcessorFactory">
+         <bool name="enabled">true</bool>
+         <str name="signatureField">id</str>
+         <str name="fields">name,features,cat</str>
+         <str name="signatureClass">solr.processor.Lookup3Signature</str>
+       </processor>
+       <processor class="solr.LogUpdateProcessorFactory" />
+       <processor class="solr.RunUpdateProcessorFactory" />
+     </updateRequestProcessorChain>
+    -->
 
   <!-- Response Writers
 
