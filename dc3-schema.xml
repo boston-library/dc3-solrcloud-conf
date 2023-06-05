@@ -122,6 +122,7 @@
 
     <field name="_text_" type="text_general" indexed="true" stored="false" multiValued="true"/>
     <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>
+    <field name="all_text_timv" type="text" stored="false" indexed="true" multiValued="true" termVectors="true" termPositions="true" termOffsets="true"/>
 
     <!-- This can be enabled, in case the client does not know what fields may be searched. It isn't enabled by default
          because it's very expensive to index everything twice. -->
@@ -151,6 +152,9 @@
     <dynamicField name="*_t"   type="text_general" indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="*_txt" type="text_general" indexed="true" stored="true"/>
 
+
+    <dynamicField name="*_isi" type="int" stored="true" indexed="true" multiValued="false"/>
+
     <dynamicField name="random_*" type="random"/>
     <dynamicField name="ignored_*" type="ignored"/>
     <dynamicField name="*_dtsi" type="date" stored="true" indexed="true" multiValued="false"/>
@@ -178,6 +182,7 @@
     <!-- text (_t...) -->
     <dynamicField name="*_tsi" type="text" stored="true" indexed="true" multiValued="false"/>
     <dynamicField name="*_tsim" type="text" stored="true" indexed="true" multiValued="true"/>
+    <dynamicField name="*_tsiv" type="text" stored="true" indexed="true" multiValued="false" termVectors="true" termPositions="true" termOffsets="true"/>
 
     <!-- boolean (_b...) -->
     <dynamicField name="*_bsi" type="boolean" stored="true" indexed="true" multiValued="false"/>
@@ -257,6 +262,8 @@
     <fieldType name="pdoubles" class="solr.DoublePointField" docValues="true" multiValued="true"/>
     <fieldType name="random" class="solr.RandomSortField" indexed="true"/>
 
+
+    <fieldType name="int" class="solr.IntPointField" docValues="true"/>
     <!-- since fields of this type are by default not stored or indexed,
        any data added to them will be ignored outright.  -->
     <fieldType name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
