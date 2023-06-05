@@ -162,6 +162,8 @@
     <dynamicField name="*_p"  type="location" indexed="true" stored="true"/>
     <dynamicField name="*_srpt"  type="location_rpt" indexed="true" stored="true"/>
 
+    <dynamicField name="*_geospatial" type="location_rpt"  indexed="true" stored="true"  multiValued="true" />
+
     <!-- payloaded dynamic fields -->
     <dynamicField name="*_dpf" type="delimited_payloads_float" indexed="true"  stored="true"/>
     <dynamicField name="*_dpi" type="delimited_payloads_int" indexed="true"  stored="true"/>
@@ -171,6 +173,7 @@
 
     <!-- text (_t...) -->
     <dynamicField name="*_tsi" type="text" stored="true" indexed="true" multiValued="false"/>
+    <dynamicField name="*_tsim" type="text" stored="true" indexed="true" multiValued="true"/>
 
     <!-- boolean (_b...) -->
     <dynamicField name="*_bsi" type="boolean" stored="true" indexed="true" multiValued="false"/>
@@ -180,10 +183,14 @@
     <dynamicField name="*spell" type="textSpell" indexed="true" stored="false" multiValued="true" />
     <!-- autocomplete field -->
     <dynamicField name="*suggest" type="textSuggest" indexed="true" stored="false" multiValued="true" />
+    <dynamicField name="*_ssm" type="string" stored="true" indexed="false" multiValued="true"/>
 
-	    <!-- <copyField source="curator_model_ssi" dest="suggest"/> -->
+
     <copyField source="*_ssi" dest="suggest"/>
     <copyField source="*_ssim" dest="suggest"/>
+ 
+    <copyField source="*_tsim" dest="spell"/>
+
     <!-- Field to use to determine and enforce document uniqueness.
       Unless this field is marked with required="false", it will be a required field
     -->
@@ -310,6 +317,10 @@
         <filter class="solr.SnowballPorterFilterFactory" language="English"/>
       </analyzer>
     </fieldType>
+
+
+    <fieldType name="location_rpt" class="solr.SpatialRecursivePrefixTreeFieldType"
+	    geo="true" distErrPct="0.025" maxDistErr="0.000009" distanceUnits="degrees" />
 
     <!-- A text field that only splits on whitespace for exact matching of words -->
     <dynamicField name="*_ws" type="text_ws"  indexed="true"  stored="true"/>
@@ -569,8 +580,6 @@
       For more information about this and other spatial fields see:
       https://solr.apache.org/guide/solr/latest/query-guide/spatial-search.html
     -->
-    <fieldType name="location_rpt" class="solr.SpatialRecursivePrefixTreeFieldType"
-               geo="true" distErrPct="0.025" maxDistErr="0.001" distanceUnits="kilometers" />
 
     <!-- Payloaded field types -->
     <fieldType name="delimited_payloads_float" stored="false" indexed="true" class="solr.TextField">
