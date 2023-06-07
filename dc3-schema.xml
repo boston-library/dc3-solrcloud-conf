@@ -112,10 +112,10 @@
 
     <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
     <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>	
-	    <!-- docValues are enabled by default for long type so we don't need to index the version field -->
-    		<field name="_version_" type="plong" indexed="false" stored="false"/> 
-    <!-- _version_ field is needed for transaction logging 
-		<field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/> -->
+	    <!-- docValues are enabled by default for long type so we don't need to index the version field
+	    <field name="_version_" type="plong" indexed="false" stored="false"/> --> 
+    <!-- _version_ field is needed for transaction logging -->
+    <field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/>
 
     <!-- If you don't use child/nested documents, then you should remove the next two fields:  -->
     <!-- for nested documents (minimal; points to root document) -->
@@ -244,6 +244,8 @@
     <!-- boolean type: "true" or "false" -->
     <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
     <fieldType name="booleans" class="solr.BoolField" sortMissingLast="true" multiValued="true"/>
+
+    <fieldType name="long" class="solr.LongPointField" docValues="true"/>
 
     <fieldType name="date" class="solr.DatePointField" docValues="true" sortMissingLast="true"/>
     <!-- A Trie based date field for faster date range queries and date faceting. -->
