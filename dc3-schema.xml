@@ -111,8 +111,11 @@
     -->
 
     <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
-    <!-- docValues are enabled by default for long type so we don't need to index the version field  -->
-    <field name="_version_" type="plong" indexed="false" stored="false"/>
+    <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>	
+	    <!-- docValues are enabled by default for long type so we don't need to index the version field -->
+    		<field name="_version_" type="plong" indexed="false" stored="false"/> 
+    <!-- _version_ field is needed for transaction logging 
+		<field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/> -->
 
     <!-- If you don't use child/nested documents, then you should remove the next two fields:  -->
     <!-- for nested documents (minimal; points to root document) -->
@@ -121,7 +124,6 @@
     <field name="_nest_path_" type="_nest_path_" /><fieldType name="_nest_path_" class="solr.NestPathField" />
 
     <field name="_text_" type="text_general" indexed="true" stored="false" multiValued="true"/>
-    <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>
     <field name="all_text_timv" type="text" stored="false" indexed="true" multiValued="true" termVectors="true" termPositions="true" termOffsets="true"/>
 
     <!-- This can be enabled, in case the client does not know what fields may be searched. It isn't enabled by default
@@ -234,7 +236,7 @@
          then default lucene sorting will be used which places docs without the
          field first in an ascending sort and last in a descending sort.
     -->
-
+  <types>
     <!-- The StrField type is not analyzed, but indexed/stored verbatim. -->
     <fieldType name="string" class="solr.StrField" sortMissingLast="true" docValues="true" />
     <fieldType name="strings" class="solr.StrField" sortMissingLast="true" multiValued="true" docValues="true" />
@@ -293,7 +295,7 @@
 
     <!--Binary data type. The data should be sent/retrieved in as Base64 encoded Strings -->
     <fieldType name="binary" class="solr.BinaryField"/>
-
+  
     <!--
     RankFields can be used to store scoring factors to improve document ranking. They should be used
     in combination with RankQParserPlugin.
@@ -650,5 +652,5 @@
        <str name="paramkey">param value</str>
      </similarity>
     -->
-
+  </types>
 </schema>
