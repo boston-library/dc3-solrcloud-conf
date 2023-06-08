@@ -6,7 +6,8 @@
       Unless this field is marked with required="false", it will be a required field
     -->
     <uniqueKey>id</uniqueKey>
-  <fields>
+  
+<fields>
     <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
     <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>	
     <!-- _version_ field is needed for transaction logging -->
@@ -90,11 +91,6 @@
     <!-- Type used to index the lat and lon components for the "location" FieldType -->
     <dynamicField name="*_coordinate" type="tdouble" indexed="true" stored="false" />
 
-    <!-- Solr4 geospatial field for coordinates, shapes, etc. 
-    <dynamicField name="*_geospatial" type="location_rpt"  indexed="true" stored="true"  multiValued="true" />	-->
-    <!-- you must define copyField source and dest fields explicitly or schemaBrowser doesn't work 
-    <field name="all_text_timv" type="text" stored="false" indexed="true" multiValued="true" termVectors="true" termPositions="true" termOffsets="true"/>  -->
-
     <!-- spellcheck field -->
     <dynamicField name="*spell" type="textSpell" indexed="true" stored="false" multiValued="true" />
     <!-- autocomplete field -->
@@ -122,10 +118,7 @@
     <dynamicField name="ignored_*" type="ignored"/>
     
     <dynamicField name="*_dtsi" type="date" stored="true" indexed="true" multiValued="false"/>
-    <!--
-    <dynamicField name="*_ssi" type="string" stored="true" indexed="true" multiValued="false"/>
-    <dynamicField name="*_ssim" type="string" stored="true" indexed="true" multiValued="true"/>
-    -->
+
     <!-- Type used for data-driven schema, to add a string copy for each text field -->
     <dynamicField name="*_str" type="strings" stored="false" docValues="true" indexed="false" useDocValuesAsStored="false"/>
 
@@ -140,19 +133,14 @@
     <dynamicField name="*_dps" type="delimited_payloads_string" indexed="true"  stored="true"/>
 
     <dynamicField name="attr_*" type="text_general" indexed="true" stored="true" multiValued="true"/>
-
-    <!-- text (_t...)
-    <dynamicField name="*_tsi" type="text" stored="true" indexed="true" multiValued="false"/> 
-    <dynamicField name="*_tsim" type="text" stored="true" indexed="true" multiValued="true"/> 
-    <dynamicField name="*_tsiv" type="text" stored="true" indexed="true" multiValued="false" termVectors="true" termPositions="true" termOffsets="true"/> -->
-
-
-    <!-- spellcheck field 
-    <dynamicField name="*spell" type="textSpell" indexed="true" stored="false" multiValued="true" /> -->
-    <!-- autocomplete field 
-    <dynamicField name="*suggest" type="textSuggest" indexed="true" stored="false" multiValued="true" />
-    <dynamicField name="*_ssm" type="string" stored="true" indexed="false" multiValued="true"/> -->
   </fields>
+
+    <!-- copyField commands copy one field to another at the time a document
+       is added to the index.  It's used either to index the same field differently,
+       or to add multiple fields to the same field for easier/faster searching.
+
+    <copyField source="sourceFieldName" dest="destinationFieldName"/>
+    -->
     <!-- _ti and _tim are not currently used, but doesn't hurt to leave here -->
     <copyField source="*_ti" dest="spell"/>
     <copyField source="*_tim" dest="spell"/>
@@ -187,13 +175,6 @@
     <copyField source="title_info_primary_trans_tsim" dest="suggest"/>
     <copyField source="title_info_translated_tsim" dest="suggest"/>
     <copyField source="title_info_primary_tsi" dest="suggest"/>
-    -->
-
-    <!-- copyField commands copy one field to another at the time a document
-       is added to the index.  It's used either to index the same field differently,
-       or to add multiple fields to the same field for easier/faster searching.
-
-    <copyField source="sourceFieldName" dest="destinationFieldName"/>
     -->
 
     <!-- field type definitions. The "name" attribute is
@@ -416,7 +397,8 @@ Optional fractional seconds are allowed: 1995-12-31T23:59:59.999Z
         <filter class="solr.PorterStemFilterFactory"/>
       </analyzer>
     </fieldType>
-    <!-- This is from default getttingstarted schema.xml -  we use our own solr-core-conf instead
+
+    <!-- This is from default getttingstarted schema.xml - keep it here in case -  we use above our own solr-core-conf instead
     <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <tokenizer name="standard"/>
