@@ -225,10 +225,6 @@ Optional fractional seconds are allowed: 1995-12-31T23:59:59.999Z
     <!-- A Trie based date field for faster date range queries and date faceting. -->
     <fieldType name="tdate" class="solr.DatePointField" docValues="true"/>
     
-    <!--
-      Numeric field types that index values using KD-trees.
-      Point fields don't support FieldCache, so they must have docValues="true" if needed for sorting, faceting, functions, etc.
-    -->
     <fieldType name="pint" class="solr.IntPointField" docValues="true"/>
     <fieldType name="pfloat" class="solr.FloatPointField" docValues="true"/>
     <fieldType name="plong" class="solr.LongPointField" docValues="true"/>
@@ -396,7 +392,9 @@ Optional fractional seconds are allowed: 1995-12-31T23:59:59.999Z
       </analyzer>
     </fieldType>
 
-    <!-- This is from default getttingstarted schema.xml - keep it here in case -  we use above our own solr-core-conf instead
+    <!-- Daniel Miao, 06/09/2023,  
+    - Following config is from default getttingstarted schema.xml - keep it here in case 
+    - we still use above our own solr-core-conf instead	    
     <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <tokenizer name="standard"/>
